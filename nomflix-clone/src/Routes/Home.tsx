@@ -1,13 +1,15 @@
-import { color } from "framer-motion";
+import { color, delay } from "framer-motion";
 import { useQueries, useQuery } from "react-query";
 import { IGetMoviesResult, getMovies } from "../api";
 import styled from "styled-components";
 import { makeImagePath } from "../utils";
 import {motion, AnimatePresence} from "framer-motion"
 import { useState } from "react";
+import { exit } from "process";
 
 const Wrapper = styled.div`
-    background-color: black;
+    
+    overflow-x: hidden;
 `
 
 const Loader = styled.div`
@@ -40,20 +42,63 @@ const Overview = styled.p`
 
 const Slider = styled.div`
     position: relative;
+    top: -100px;
 `
 const Row = styled(motion.div)`
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
+    gap: 5px;
     position: absolute;
     width: 100%;
 `;
 
-const Box = styled(motion.div)`
+const Box = styled(motion.div)<{bgPhoto: string}>`
     background-color: white;
     height: 200px;
-   
+    background-image: url(${props => props.bgPhoto});
+    font-size: 64px;
+    background-size: cover;
+    background-position: center center;
+    &:first-child{
+       transform-origin: center left;
+    }
+    &:last-child{
+       transform-origin: center right;
+    }
 `;
+
+const rowVariants = {
+    hidden: {
+        x: window.outerWidth +5
+    },
+    visible: {
+        x:0,
+    },
+    exit: {
+        x: -window.outerWidth -5
+    },
+}
+// window.innerwidth   브라우저 화면의 너비
+// window.innerHeight  브라우저 화면의 높이 
+// window.outerwidth   브라우저 전체의 너비
+// window.innerHeight  브라우저 화면의 높이 
+
+const offSet = 6; 
+
+const boxVariants ={
+    normal:{
+        scale: 1, 
+    },
+    hover:{
+        y: -50,
+        scale: 1.3,
+        transition:{
+            delay:0.5,
+            duration:0.3,
+            type:'tween',
+        }
+    }
+}
 
 
 function Home(){
@@ -61,23 +106,45 @@ function Home(){
     console.log(data, isLoading)
 
     const [index, setIndex] = useState(0)
-    const increaseIndex = () =>  setIndex((prev) => prev +1)
+    const increaseIndex = () =>  {
+        if(data){
+            if(leaving) return;
+            toggleLeaving()
+            const totalMovies = data.results.length-1
+            const maxIndex = Math.ceil(totalMovies/offSet) -1;
+            setIndex((prev) => (prev === maxIndex ? 0 : prev + 1))
+        }
+      }
+    const [leaving, setLeaving] = useState(false)
+    const toggleLeaving = () => setLeaving((prev) => !prev) 
     return (
        <Wrapper>{isLoading ? (<Loader>Loading</Loader>): (
        <>
-       <Banner bgPhoto = {makeImagePath(data?.results[0].backdrop_path || "")}>
+       <Banner onClick={increaseIndex} bgPhoto = {makeImagePath(data?.results[0].backdrop_path || "")}>
         <Title>{data?.results[0].title}</Title>
         <Overview>{data?.results[0].overview}</Overview>
         </Banner>
         <Slider>
-            <AnimatePresence>
-                <Row key={index}>
-                    <Box></Box>
-                    <Box></Box>
-                    <Box></Box>
-                    <Box></Box>
-                    <Box></Box>
-                    <Box></Box>
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
+                <Row 
+                key={index} 
+                variants={rowVariants} 
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={{type:"tween", duration: 1}}
+                >
+                    {data?.results.slice(1)
+                    .slice(offSet*index, offSet*index + offSet)
+                    .map((movie) => (
+                    <Box 
+                        key={movie.id}
+                        whileHover= "hover"
+                        initial= "normal"
+                        variants={boxVariants}
+                        transition={{type: 'tween'}}
+                        bgPhoto = {makeImagePath(movie.backdrop_path, "w500" )}
+                    />))}
                 </Row>
           </AnimatePresence>
         </Slider>

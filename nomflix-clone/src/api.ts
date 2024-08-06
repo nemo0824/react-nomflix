@@ -23,3 +23,12 @@ export interface IGetMoviesResult{
 export function getMovies(){
     return fetch(`${BASE_PATH}/movie/now_playing?api_key=${API_KEY}`).then((response)=> response.json())
 }
+
+
+// export function getMovies() {
+//     return fetch(`${BASE_PATH}/movie/now_playing`, {
+//       headers: {
+//         'X-Auth-Token': `${API_KEY}`
+//       }
+//     });
+//   }
