@@ -6,6 +6,8 @@ import { makeImagePath } from "../utils";
 import {motion, AnimatePresence} from "framer-motion"
 import { useState } from "react";
 import { exit } from "process";
+import { hover } from "@testing-library/user-event/dist/hover";
+import { useNavigate } from "react-router-dom";
 
 const Wrapper = styled.div`
     
@@ -59,6 +61,7 @@ const Box = styled(motion.div)<{bgPhoto: string}>`
     font-size: 64px;
     background-size: cover;
     background-position: center center;
+   
     &:first-child{
        transform-origin: center left;
     }
@@ -66,6 +69,31 @@ const Box = styled(motion.div)<{bgPhoto: string}>`
        transform-origin: center right;
     }
 `;
+
+const Info = styled(motion.div)`
+    padding: 10px;
+    background-color: ${props => props.theme.black.lighter};
+    opacity: 0;
+    position: absolute;
+    bottom:0;
+    width: 100%;
+    h4{
+        text-align: center;
+        font-size: 18px;
+    }
+`
+
+const InfoVariants = {
+    hover:{
+        opacity: 1,
+        transition:{
+            delay:0.5,
+            duration:0.3,
+            type:'tween',
+        }
+    }
+}
+
 
 const rowVariants = {
     hidden: {
@@ -102,6 +130,8 @@ const boxVariants ={
 
 
 function Home(){
+    const navigate = useNavigate();
+   
     const {data , isLoading} = useQuery<IGetMoviesResult>(["movies", "nowPlaying"], getMovies)
     console.log(data, isLoading)
 
@@ -117,6 +147,9 @@ function Home(){
       }
     const [leaving, setLeaving] = useState(false)
     const toggleLeaving = () => setLeaving((prev) => !prev) 
+    const onBoxClicked = (movieId:number) =>{
+        navigate(`/movies/${movieId}`)
+    }
     return (
        <Wrapper>{isLoading ? (<Loader>Loading</Loader>): (
        <>
@@ -144,7 +177,15 @@ function Home(){
                         variants={boxVariants}
                         transition={{type: 'tween'}}
                         bgPhoto = {makeImagePath(movie.backdrop_path, "w500" )}
-                    />))}
+                        onClick={()=> onBoxClicked(movie.id)}
+                    >
+                        {/* 부모요소 안에 Info 들어왔기때문에 variants 같은 요소들이 상속됨 whilehover됨  */}
+                        <Info
+                            variants={InfoVariants}
+                        >
+                            <h4>{movie.title}</h4>
+                        </Info>
+                    </Box>))}
                 </Row>
           </AnimatePresence>
         </Slider>
