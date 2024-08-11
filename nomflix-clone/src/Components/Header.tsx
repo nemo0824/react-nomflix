@@ -1,7 +1,8 @@
 import styled from "styled-components"
 import {motion, useAnimation, useScroll} from "framer-motion"
-import { Link, useMatch } from "react-router-dom"
+import { Link, useMatch, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
 
 const Nav = styled(motion.nav)`
     display: flex;
@@ -49,7 +50,7 @@ justify-content: center;
 flex-direction: column;
 `;
 
-const Search = styled.span`
+const Search = styled.form`
   color: white;
   display: flex;
   align-items: center;
@@ -103,6 +104,11 @@ const Input = styled(motion.input)`
     font-size: 16px;
 `
 
+interface IForm{
+    keyword: string;
+}
+
+
 function Header(){
     const homeMatch = useMatch("/");
     const tvMatch = useMatch("tv");
@@ -142,6 +148,15 @@ function Header(){
         })
     },[scrollY])
     
+    const navigate = useNavigate()
+    const {register, handleSubmit} = useForm<IForm>()
+    const onValid = (data:IForm) => {
+        console.log(data)
+        navigate(`/search?keyword=${data.keyword}`)
+    }
+    
+
+  
    //애니매이션 적용시 
    // navAnimation 만들기 --> nav 태그에 값연결
    // useEffect로 의존성주입후 scrollY가 움직일때 값 설정 
@@ -165,7 +180,7 @@ function Header(){
          </Items>
         </Col>
         <Col>
-        <Search>
+        <Search onSubmit={handleSubmit(onValid)}>
           <motion.svg
             onClick={toggleButton}
             animate={{x: searchOpen ? -180 : 0}}
@@ -181,6 +196,7 @@ function Header(){
             ></path>
           </motion.svg>
           <Input 
+          {...register("keyword", {required:true, minLength: 2})}
           animate = {inputAnimation}
           initial={{scaleX: 0}}
           transition={{type: "linear"}} 
